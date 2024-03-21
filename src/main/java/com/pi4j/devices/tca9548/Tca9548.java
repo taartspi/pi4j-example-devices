@@ -90,6 +90,8 @@ public class Tca9548 extends BasicI2cDevice implements GpioBasics {
      */
     private void init() {
         this.cfgData = new Tca9548ConfigData(this.ffdc);
+        int data = 0xff;
+        this.i2cDevice.write((byte)data&0xff);
     }
 
 

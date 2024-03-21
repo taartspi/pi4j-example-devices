@@ -5,6 +5,9 @@ module com.pi4j.devices{
     requires com.pi4j.plugin.pigpio;
     requires com.pi4j.library.pigpio;
 
+ //   requires com.pi4j.plugin.gpiod;
+ //   requires com.pi4j.library.gpiod;
+
     // SLF4J MODULES   LOG4J
     requires org.slf4j;
     requires org.slf4j.simple;

@@ -41,6 +41,7 @@ import com.pi4j.context.Context;
 import com.pi4j.io.gpio.digital.*;
 import com.pi4j.io.i2c.I2C;
 import com.pi4j.io.i2c.I2CConfig;
+import com.pi4j.io.i2c.I2CProvider;
 import com.pi4j.util.Console;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -161,49 +162,49 @@ public class MPL3115A2 {
                 .device(address)
                 .id(id + " " + name)
                 .name(name)
-                .provider("pigpio-i2c")
+                .provider("linuxfs-i2c")
                 .build();
         this.config = i2cDeviceConfig;
         this.i2c = this.pi4j.create(i2cDeviceConfig);
         this.logger.trace("<<< Exit:createI2cDevice  ");
     }
 
-private void init(){
-    this.logger.trace(">>> Enter: init");
+    private void init(){
+        this.logger.trace(">>> Enter: init");
 
-            var ledConfigIntr = DigitalInput.newConfigBuilder(pi4j)
-                    .id("Interrupt_1")
-                    .name("Interrupt_1_TW_PW")
-                    .address(this.int1_gpio)
-                    .pull(PullResistance.OFF)
-                    .debounce(4000L)
-                    .provider("pigpio-digital-input");
-    try {
-        this.int1 = pi4j.create(ledConfigIntr);
-        this.int1.addListener(new MonitorInterrupt1(this));
-    } catch (Exception e) {
-        e.printStackTrace();
-        console.println("create Digital 1 failed");
-        System.exit(200);
-    }
+        var ledConfigIntr = DigitalInput.newConfigBuilder(pi4j)
+                .id("Interrupt_1")
+                .name("Interrupt_1_TW_PW")
+                .address(this.int1_gpio)
+                .pull(PullResistance.OFF)
+                .debounce(4000L)
+                .provider("gpiod-digital-input");
+        try {
+            this.int1 = pi4j.create(ledConfigIntr);
+            this.int1.addListener(new MonitorInterrupt1(this));
+        } catch (Exception e) {
+            e.printStackTrace();
+            console.println("create Digital 1 failed");
+            System.exit(200);
+        }
 
-    var ledConfigIntr2 = DigitalInput.newConfigBuilder(pi4j)
-            .id("Interrupt_2")
-            .name("Interrupt_2_DRDY")
-            .address(this.int2_gpio)
-            .pull(PullResistance.OFF)
-            .debounce(4000L)
-            .provider("pigpio-digital-input");
-    try {
-        this.int2 = pi4j.create(ledConfigIntr2);
-    } catch (Exception e) {
-        e.printStackTrace();
-        console.println("create Digital 2 failed");
-        System.exit(201);
+        var ledConfigIntr2 = DigitalInput.newConfigBuilder(pi4j)
+                .id("Interrupt_2")
+                .name("Interrupt_2_DRDY")
+                .address(this.int2_gpio)
+                .pull(PullResistance.OFF)
+                .debounce(4000L)
+                .provider("gpiod-digital-input");
+        try {
+            this.int2 = pi4j.create(ledConfigIntr2);
+        } catch (Exception e) {
+            e.printStackTrace();
+            console.println("create Digital 2 failed");
+            System.exit(201);
+        }
+        this.validateWhoAmI();
+        this.logger.trace("<<< Exit: init");
     }
-    this.validateWhoAmI();
-    this.logger.trace("<<< Exit: init");
-}
 
     /**
      * @return string containing a description of the attached I2C path
@@ -219,7 +220,50 @@ private void init(){
     private boolean validateWhoAmI(){
         this.logger.trace(">>> Enter: validateWhoAmI");
         boolean rval = false;
-        int who =  this.i2c.readRegisterByte(MPL3115A2_Declares.REG_WHO_AM_I) & 0xff;
+
+        I2CProvider i2CProvider = pi4j.provider("linuxfs-i2c");
+        I2CConfig i2cConfig = I2C.newConfigBuilder(pi4j).id("TCA9534").bus(1).device(0x60).build();
+
+        try (I2C tca9534Dev = i2CProvider.create(i2cConfig)) {
+
+            int config = tca9534Dev.readRegister(MPL3115A2_Declares.REG_WHO_AM_I);
+
+            int x = tca9534Dev.read();
+            tca9534Dev.writeRegister(MPL3115A2_Declares.REG_CTRL1, 0x42);
+//            tca9534Dev.writeRegister(TCA9534_REG_ADDR_CFG, (byte) 0x00);
+
+//            tca9534Dev.writeRegister(TCA9534_REG_ADDR_OUT_PORT, newState);
+        }
+
+
+        int who =  this.i2c.readRegisterByte(MPL3115A2_Declares.REG_WHO_AM_I);// & 0xff;
+        byte buff[] = new byte[1];
+
+        this.i2c.readRegister(MPL3115A2_Declares.REG_WHO_AM_I,  buff, 0, 1);
+
+        who =  this.i2c.readRegister(MPL3115A2_Declares.REG_WHO_AM_I);// & 0xff;
+
+      /*  who =  this.i2c.writeReadRegisterWord(0x0f, 0x42);
+
+        byte rd[] = new byte[1];
+        rd[0] = 0x0f;
+        who =  this.i2c.writeReadRegisterWord(0x0f, 0x4242);
+
+        who =  this.i2c.writeRegister(0x0f, 0x42);
+
+        who =  this.i2c.readRegister(0x0f, rd);// & 0xff;
+
+
+        this.i2c.writeRegister(rd[0], rd[0]);
+
+
+        who = this.i2c.read();
+
+
+        who = this.i2c.read(rd);
+
+        who = this.i2c.readByte();
+*/
         if(who == MPL3115A2_Declares.WHO_AM_I){
             rval = true;
         }else{
@@ -358,7 +402,7 @@ private void init(){
         reg = this.i2c.readRegisterByte(MPL3115A2_Declares.REG_PT_DATA_CFG);
         this.i2c.writeRegister(MPL3115A2_Declares.REG_PT_DATA_CFG, reg | MPL3115A2_Declares.PT_DATA_CFG_EVNT_ENBL | MPL3115A2_Declares.PT_DATA_CFG_EVNT_T);
 
-          reg = this.i2c.readRegisterByte(MPL3115A2_Declares.REG_CTRL4);
+        reg = this.i2c.readRegisterByte(MPL3115A2_Declares.REG_CTRL4);
         this.i2c.writeRegister(MPL3115A2_Declares.REG_CTRL4, reg | MPL3115A2_Declares.CTL4_INT_EN_DRDY);
 
         reg = this.i2c.readRegisterByte(MPL3115A2_Declares.REG_CTRL1);
@@ -407,7 +451,7 @@ private void init(){
             // fill in rval double
             // 16 bits are integer value  4 bits frac
             Double alt = Double.valueOf((dig_a1  << 8) | (dig_a2 & 0xff) );
-             // mask the bits, shift right for proper LSB as first bit.
+            // mask the bits, shift right for proper LSB as first bit.
             // The shift right 4 to make the fraction
             // see
             // https://indepth.dev/posts/1019/the-simple-math-behind-decimal-binary-conversion-algorithms
@@ -444,7 +488,7 @@ private void init(){
             Double lsbFrac = ((dig_p3 >> 4) & 0x3)/4.0;
             Double prs = Double.valueOf(((dig_p1 & 0xff) << 10) | ((dig_p2 & 0xff)<<2)  | ((dig_p3 &0xC0) >>6) );
 
-             rval = prs + lsbFrac;
+            rval = prs + lsbFrac;
 
         }else{
             this.logger.error("forcePressCalc failure");
@@ -504,7 +548,7 @@ private void init(){
         return(rval);
     }
 
-     public double readTemperatureF() {
+    public double readTemperatureF() {
         this.logger.trace("enter: temperatureF");
         double fTemp = this.readTemperatureC() * 1.8 + 32;
         this.logger.trace("exit: temperatureF  " + fTemp);
@@ -624,7 +668,7 @@ private void init(){
      * The code at present just prints the present value for what
      * caused the interrupt.  You could change the code to take some action
      * based on what occurred.
-      */
+     */
     public static class MonitorInterrupt1 implements DigitalStateChangeListener {
         MPL3115A2 mplObj;
         public MonitorInterrupt1( MPL3115A2 mplObj) {

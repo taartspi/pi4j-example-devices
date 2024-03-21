@@ -39,6 +39,9 @@ package com.pi4j.devices.mpl3115a2;
 import com.pi4j.Pi4J;
 import com.pi4j.context.Context;
 import com.pi4j.exception.LifecycleException;
+import com.pi4j.plugin.linuxfs.provider.i2c.LinuxFsI2CProvider;
+import com.pi4j.plugin.pigpio.provider.gpio.digital.PiGpioDigitalOutputProvider;
+import com.pi4j.plugin.pigpio.provider.i2c.PiGpioI2CProvider;
 import com.pi4j.util.Console;
 import sun.misc.Signal;
 import sun.misc.SignalHandler;
@@ -88,9 +91,11 @@ public class MPL3115A2_App {
         // extensions found in the application's classpath which
         // may include 'Platforms' and 'I/O Providers'
 
-        /*var pi4j = Pi4J.newContextBuilder().add(
+      /*  var pi4j = Pi4J.newContextBuilder().add(
                 LinuxFsI2CProvider.newInstance()).build();
-*/
+        */
+       /* var pi4j = Pi4J.newContextBuilder().add(
+                PiGpioI2CProvider.newInstance()).build(); */
         Context pi4j = Pi4J.newAutoContext();
 
         // print installed providers

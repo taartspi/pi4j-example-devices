@@ -38,6 +38,14 @@ import com.pi4j.devices.base_util.ffdc.FfdcUtil;
 import com.pi4j.Pi4J;
 import com.pi4j.context.Context;
 import com.pi4j.exception.LifecycleException;
+import com.pi4j.io.i2c.I2C;
+import com.pi4j.io.i2c.I2CProvider;
+import com.pi4j.library.pigpio.PiGpio;
+import com.pi4j.library.pigpio.PiGpio_I2C;
+import com.pi4j.plugin.linuxfs.provider.i2c.LinuxFsI2CProvider;
+import com.pi4j.plugin.pigpio.provider.gpio.digital.PiGpioDigitalInputProvider;
+import com.pi4j.plugin.pigpio.provider.gpio.digital.PiGpioDigitalOutputProvider;
+import com.pi4j.plugin.pigpio.provider.i2c.PiGpioI2CProvider;
 import com.pi4j.util.Console;
 
 import com.pi4j.devices.tca9548.Tca9548;
@@ -81,10 +89,10 @@ public class SampleTca9548App {
      * PostCond:  Requested actions completed
      */
     public static void main(String[] args) throws Exception {
-        var console = new Console();
+       // var console = new Console();
 
         // Print program title/header
-        console.title("<-- The Pi4J V2 Project Extension  -->", "SampleTca9548App  TCA9548");
+       // console.title("<-- The Pi4J V2 Project Extension  -->", "SampleTca9548App  TCA9548");
 
         // ************************************************************
 
@@ -99,8 +107,39 @@ public class SampleTca9548App {
         // method will automatically load all available Pi4J
         // extensions found in the application's classpath which
         // may include 'Platforms' and 'I/O Providers'
-        Context pi4j = Pi4J.newAutoContext();
+        //Context pi4j = Pi4J.newAutoContext();
+        com.pi4j.library.pigpio.PiGpio piGpio = PiGpio.newNativeInstance();
+        Context pi4j = Pi4J.newContextBuilder().add(
+                PiGpioI2CProvider.newInstance(piGpio),
+                /*LinuxFsI2CProvider.newInstance(),*/
+                PiGpioDigitalInputProvider.newInstance(piGpio),
+                PiGpioDigitalOutputProvider.newInstance(piGpio)).build();
 
+        var console = new Console();
+        System.out.println("----------------------------------------------------------");
+        System.out.println("PI4J PROVIDERS");
+        System.out.println("----------------------------------------------------------");
+        pi4j.providers().describe().print(System.out);
+        System.out.println("----------------------------------------------------------");
+        console.title("<-- Set Config -->", "I2C PCA8574 Set Config");
+       // var pi4J = Pi4J.newAutoContext();
+    /*   I2CProvider i2cProvider = pi4j.provider("pigpio-i2c");
+        int config = 0xff;
+        var pca8574Config = I2C.newConfigBuilder(pi4j)
+                .id("my-i2c-bus")
+                .name("My I2C Bus")
+                .bus(1)
+                .device(0x70)
+                .build();
+        try (var i2c = i2cProvider.create(pca8574Config)) {
+            //config = config & 0xff;
+            i2c.write((byte)config);
+            console.println("completed write operation");
+            console.println();
+            console.println("ATTEMPTING TO SHUTDOWN/TERMINATE THIS PROGRAM");
+          //  pi4j.shutdown();
+        }
+*/
         // declare and initialize attributes (state) used within the app
         int ffdcControlLevel = 0;
         int busNum = 0x1;
