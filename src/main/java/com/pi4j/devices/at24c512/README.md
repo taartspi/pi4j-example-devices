@@ -50,6 +50,6 @@ trace values : "trace", "debug", "info", "warn", "error" or "off"  Default "info
 
 sudo ./runAT24C512.sh -b 0x01  -b 0x01 -a 0x50 -n 0x11 -w 0x112 -d 0x1122334455667788990011223344556677  -t trace
 
-
+sudo ./runAT24C512.sh -b 0x01  -b 0x01 -a 0x50 -n 0x10 -r 0x114 -t trace
 
 
